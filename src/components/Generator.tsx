@@ -17,6 +17,11 @@ import { toast } from "sonner";
 
 const ACCEPT = "image/jpeg,image/jpg,image/png,image/webp";
 const MODEL = "gpt-image-1";
+type ShotPrompt = { key?: string; prompt?: string };
+type GeneratedOutputs = {
+  lifestyle: string | null;
+  inUse: string | null;
+};
 
 const readTextFile = async (path: string) => {
   const response = await fetch(path);
@@ -26,16 +31,16 @@ const readTextFile = async (path: string) => {
   return response.text();
 };
 
-const getPrompt = async () => {
+const getPromptByKey = async (promptKey: string, fallbackPrompt: string) => {
   const [basePromptText, shotPromptsText] = await Promise.all([
     readTextFile("/base_prompt.txt"),
     readTextFile("/shot_prompts.json"),
   ]);
 
-  const parsedShots = JSON.parse(shotPromptsText) as Array<{ prompt?: string }>;
-  const firstShot = parsedShots[0]?.prompt ?? "Create a single premium lifestyle product shot.";
+  const parsedShots = JSON.parse(shotPromptsText) as ShotPrompt[];
+  const matchedPrompt = parsedShots.find((shot) => shot.key === promptKey)?.prompt ?? fallbackPrompt;
 
-  return `${basePromptText.trim()}\n\n### VISUAL VARIATION:\n${firstShot}`;
+  return `${basePromptText.trim()}\n\n### VISUAL VARIATION:\n${matchedPrompt}`;
 };
 
 export const Generator = () => {
@@ -45,7 +50,7 @@ export const Generator = () => {
   const [industry, setIndustry] = useState("bags-accessories");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [result, setResult] = useState<string | null>(null);
+  const [results, setResults] = useState<GeneratedOutputs>({ lifestyle: null, inUse: null });
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -55,7 +60,7 @@ export const Generator = () => {
   const clearImage = () => {
     setFile(null);
     setPreview(null);
-    setResult(null);
+    setResults({ lifestyle: null, inUse: null });
     if (inputRef.current) {
       inputRef.current.value = "";
     }
@@ -70,7 +75,7 @@ export const Generator = () => {
 
     setFile(f);
     setPreview(URL.createObjectURL(f));
-    setResult(null);
+    setResults({ lifestyle: null, inUse: null });
   };
 
   const allFilled = brandName && brandWebsite && productName && industry && file;
@@ -88,19 +93,9 @@ export const Generator = () => {
 
     setLoading(true);
     setDialogOpen(true);
-    setResult(null);
+    setResults({ lifestyle: null, inUse: null });
 
-    try {
-      const promptTemplate = await getPrompt();
-      const prompt = [
-        promptTemplate,
-        `Brand Name: ${brandName}`,
-        `Brand Website: ${brandWebsite}`,
-        `Product Name: ${productName}`,
-        "Industry: Bags & Accessories",
-        "Generate only one final lifestyle image.",
-      ].join("\n");
-
+    const generateImage = async (prompt: string) => {
       const formData = new FormData();
       formData.append("model", MODEL);
       formData.append("prompt", prompt);
@@ -129,15 +124,35 @@ export const Generator = () => {
         throw new Error("No image was returned by the API.");
       }
 
-      if (output.b64_json) {
-        setResult(`data:image/png;base64,${output.b64_json}`);
-      } else if (output.url) {
-        setResult(output.url);
-      } else {
-        throw new Error("Unexpected API response.");
-      }
+      if (output.b64_json) return `data:image/png;base64,${output.b64_json}`;
+      if (output.url) return output.url;
 
-      toast.success("Your lifestyle image is ready!");
+      throw new Error("Unexpected API response.");
+    };
+
+    try {
+      const [lifestyleTemplate, inUseTemplate] = await Promise.all([
+        getPromptByKey("lifestyle", "Create a premium lifestyle composition with realistic props."),
+        getPromptByKey("in_use", "Create a natural in-use shot with the product worn or actively used."),
+      ]);
+
+      const baseContext = [
+        `Brand Name: ${brandName}`,
+        `Brand Website: ${brandWebsite}`,
+        `Product Name: ${productName}`,
+        "Industry: Bags & Accessories",
+      ].join("\n");
+
+      const lifestylePrompt = `${lifestyleTemplate}\n${baseContext}\nGenerate only one final lifestyle image.`;
+      const inUsePrompt = `${inUseTemplate}\n${baseContext}\nGenerate only one final in-use image.`;
+
+      const [lifestyle, inUse] = await Promise.all([
+        generateImage(lifestylePrompt),
+        generateImage(inUsePrompt),
+      ]);
+
+      setResults({ lifestyle, inUse });
+      toast.success("Both lifestyle and in-use images are ready!");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Generation failed.";
       toast.error(message);
@@ -240,26 +255,48 @@ export const Generator = () => {
           </div>
 
           <div className="surface-1 rounded-2xl border border-border/60 p-6 md:p-8 shadow-card flex flex-col">
-            <div className="text-sm text-muted-foreground mb-4">Final output</div>
-            <div className="flex-1 rounded-xl border border-border/60 bg-background/40 overflow-hidden min-h-[320px] flex items-center justify-center">
-              {result ? (
-                <img src={result} alt="Generated lifestyle" className="w-full h-full object-cover" />
-              ) : preview ? (
-                <img src={preview} alt="Uploaded product" className="w-full h-full object-cover opacity-60" />
-              ) : (
-                <div className="text-center px-6">
-                  <Sparkles className="h-10 w-10 text-primary mx-auto mb-3" />
-                  <p className="text-muted-foreground">Your generated image will appear here.</p>
-                </div>
+            <div className="text-sm text-muted-foreground mb-4">Final outputs</div>
+            <div className="grid gap-4">
+              <div className="rounded-xl border border-border/60 bg-background/40 overflow-hidden min-h-[220px] flex items-center justify-center">
+                {results.lifestyle ? (
+                  <img src={results.lifestyle} alt="Generated lifestyle" className="w-full h-full object-cover" />
+                ) : preview ? (
+                  <img src={preview} alt="Uploaded product" className="w-full h-full object-cover opacity-60" />
+                ) : (
+                  <div className="text-center px-6">
+                    <Sparkles className="h-10 w-10 text-primary mx-auto mb-3" />
+                    <p className="text-muted-foreground">Lifestyle image will appear here.</p>
+                  </div>
+                )}
+              </div>
+              {results.lifestyle && (
+                <Button asChild variant="outline" className="border-gold">
+                  <a href={results.lifestyle} download={`contentpro-${productName || "product"}-lifestyle.png`}>
+                    <Download className="mr-2 h-4 w-4" /> Download Lifestyle
+                  </a>
+                </Button>
+              )}
+
+              <div className="rounded-xl border border-border/60 bg-background/40 overflow-hidden min-h-[220px] flex items-center justify-center">
+                {results.inUse ? (
+                  <img src={results.inUse} alt="Generated in-use" className="w-full h-full object-cover" />
+                ) : preview ? (
+                  <img src={preview} alt="Uploaded product" className="w-full h-full object-cover opacity-60" />
+                ) : (
+                  <div className="text-center px-6">
+                    <Sparkles className="h-10 w-10 text-primary mx-auto mb-3" />
+                    <p className="text-muted-foreground">In-use image will appear here.</p>
+                  </div>
+                )}
+              </div>
+              {results.inUse && (
+                <Button asChild variant="outline" className="border-gold">
+                  <a href={results.inUse} download={`contentpro-${productName || "product"}-in-use.png`}>
+                    <Download className="mr-2 h-4 w-4" /> Download In-Use
+                  </a>
+                </Button>
               )}
             </div>
-            {result && (
-              <Button asChild variant="outline" className="mt-4 border-gold">
-                <a href={result} download={`contentpro-${productName || "lifestyle"}.png`}>
-                  <Download className="mr-2 h-4 w-4" /> Download
-                </a>
-              </Button>
-            )}
           </div>
         </div>
       </div>
@@ -279,21 +316,45 @@ export const Generator = () => {
             {loading ? (
               <div className="flex flex-col items-center gap-3 text-muted-foreground">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-sm">Crafting your lifestyle shot…</p>
+                <p className="text-sm">Crafting your lifestyle and in-use shots…</p>
               </div>
-            ) : result ? (
-              <img src={result} alt="Generated lifestyle output" className="h-full w-full object-cover" />
             ) : (
-              <p className="text-sm text-muted-foreground">No image yet.</p>
+              <div className="grid md:grid-cols-2 gap-3 w-full p-3">
+                <div className="rounded-lg overflow-hidden border border-border/60 bg-background/40 min-h-[220px] flex items-center justify-center">
+                  {results.lifestyle ? (
+                    <img src={results.lifestyle} alt="Generated lifestyle output" className="h-full w-full object-cover" />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Lifestyle image not ready.</p>
+                  )}
+                </div>
+                <div className="rounded-lg overflow-hidden border border-border/60 bg-background/40 min-h-[220px] flex items-center justify-center">
+                  {results.inUse ? (
+                    <img src={results.inUse} alt="Generated in-use output" className="h-full w-full object-cover" />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">In-use image not ready.</p>
+                  )}
+                </div>
+              </div>
             )}
           </div>
 
-          {!loading && result && (
-            <Button asChild className="bg-gold text-primary-foreground hover:opacity-90">
-              <a href={result} download={`contentpro-${productName || "lifestyle"}.png`}>
-                <Download className="mr-2 h-4 w-4" /> Download Image
-              </a>
-            </Button>
+          {!loading && (results.lifestyle || results.inUse) && (
+            <div className="grid sm:grid-cols-2 gap-2">
+              {results.lifestyle && (
+                <Button asChild className="bg-gold text-primary-foreground hover:opacity-90">
+                  <a href={results.lifestyle} download={`contentpro-${productName || "product"}-lifestyle.png`}>
+                    <Download className="mr-2 h-4 w-4" /> Download Lifestyle
+                  </a>
+                </Button>
+              )}
+              {results.inUse && (
+                <Button asChild className="bg-gold text-primary-foreground hover:opacity-90">
+                  <a href={results.inUse} download={`contentpro-${productName || "product"}-in-use.png`}>
+                    <Download className="mr-2 h-4 w-4" /> Download In-Use
+                  </a>
+                </Button>
+              )}
+            </div>
           )}
         </DialogContent>
       </Dialog>
