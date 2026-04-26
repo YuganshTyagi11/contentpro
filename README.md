@@ -1,45 +1,46 @@
-# AI Image Generation Pipeline
+# Content Pro — Bags & Accessories Lifestyle Image Generator
 
-This project provides a generic pipeline for generating high-quality AI images using reference images and a specialized prompt system.
+This project now includes a working frontend generator flow for **one lifestyle output image** per request.
 
-## Setup Instructions
+## What was added
 
-1. **Clone the repository:**
+- Reduced spacing between page sections for a tighter layout.
+- Upload preview now includes a **close (X)** action to remove the selected image.
+- Clicking **Generate Now** opens a generation dialog window.
+- After generation, the generated lifestyle image is shown in the dialog and main preview.
+- Download button is available for the final generated image.
+- Prompt files (`base_prompt.txt` and `shot_prompts.json`) are mapped to frontend and loaded during generation.
+
+## Setup
+
+1. Install dependencies:
    ```bash
-   git clone <repository_url>
+   npm install
    ```
 
-2. **Install dependencies:**
-   It is recommended to use a virtual environment.
+2. Create a local `.env` file from `.env.example`:
    ```bash
-   python -m venv venv
-   source venv/bin/activate
-   pip install -r requirements.txt
+   cp .env.example .env
    ```
 
-3. **Configure Environment Variables:**
-   Create a `.env` file in the root directory and add your OpenAI API key:
+3. Add your key in `.env` (do not commit `.env`):
    ```env
-   OPENAI_API_KEY=your_openai_api_key_here
+   VITE_OPENAI_API_KEY=your_openai_api_key_here
    ```
 
-## Usage
+4. Run the app:
+   ```bash
+   npm run dev
+   ```
 
-The `image_gen.py` script is designed to be flexible and configurable via command-line arguments.
+## Generation behavior
 
-### Arguments:
-- `--image_dir`: (Required) Path to the directory containing your reference images (supported formats: .jpg, .jpeg, .png, .webp).
-- `--output_dir`: (Optional) Path to the directory where generated images will be saved. Defaults to `output`.
-- `--n`: (Optional) Number of images to generate. This also determines how many shot prompts from `shot_prompts.json` are appended to the base prompt. Defaults to `1`.
+- Endpoint used: `POST https://api.openai.com/v1/images/edits`
+- Model: `gpt-image-1`
+- Output count: exactly `1`
+- Quality: `low` (for lower cost)
+- Size: `1024x1024`
 
-### Running the script:
-```bash
-python image_gen.py --image_dir ./my_reference_images --output_dir ./results --n 5
-```
+## Important note
 
-## How it Works
-1. **Base Prompt:** The script reads the core instructions from `base_prompt.txt`.
-2. **Shot Prompts:** It loads variation descriptions from `shot_prompts.json`.
-3. **Dynamic Prompting:** Based on the value of `n`, it appends the first `n` shot prompts to the base prompt to guide the AI in generating diverse variations.
-4. **Reference Images:** Up to 4 reference images from the specified `--image_dir` are used as input for the model. If more than 4 images are present, only the first 4 (sorted alphabetically) will be used.
-5. **Generation:** It calls the `gpt-image-1.5` model to generate the images and saves them to the specified `--output_dir`.
+This implementation uses a `VITE_` environment variable, so the key is available in the browser at runtime. For production, move image generation to a secure backend API.

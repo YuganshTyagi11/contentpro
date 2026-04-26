@@ -5,7 +5,7 @@ import sample2 from "@/assets/sample-2.png";
 
 export const Hero = () => (
   <section id="top" className="relative overflow-hidden">
-    <div className="container py-20 md:py-32 grid lg:grid-cols-2 gap-12 items-center">
+    <div className="container py-14 md:py-20 grid lg:grid-cols-2 gap-12 items-center">
       <div className="animate-fade-up">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-gold bg-secondary/50 text-xs uppercase tracking-widest text-muted-foreground mb-6">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
