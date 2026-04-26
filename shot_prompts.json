@@ -1,0 +1,8 @@
+[
+    {"key":"hero","prompt":"Create a premium front-angle hero composition on a clean studio white background. Keep the full garment visible, proportionally accurate, and absolutely faithful to the original shape, fabric, and detailing."},
+    {"key":"lifestyle","prompt":"Create a premium lifestyle composition with the garment styled in a realistic setting with elegant props relevant to its use. Keep the product fully visible and strictly unchanged in material, texture, and design."},
+    {"key":"front_view","prompt":"Create a clear front view shot showing the garment worn or displayed. Ensure fit, proportions, and detailing are exactly faithful to the original product."},
+    {"key":"in_use","prompt":"Create a natural wearable scene showing the garment on a model or in real use. Keep the product clearly visible, naturally styled, and strictly identical to the reference product."},
+    {"key":"storytelling","prompt":"Create a realistic lifestyle moment showing the garment in use within a relevant context. Convey style, comfort, occasion relevance, and authenticity while keeping the product clearly visible and unchanged."},
+    {"key":"close_detail","prompt":"Create a tight premium detail shot that highlights fabric texture, stitching, embroidery, prints, closures, and finishing. Do not alter the product design or visible detailing."}
+]
