@@ -175,7 +175,7 @@ export const Generator = () => {
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
+        <div className="grid lg:grid-cols-2 items-start gap-6 max-w-6xl mx-auto">
           <div className="surface-1 rounded-2xl border border-border/60 p-6 md:p-8 shadow-card">
             <div className="grid gap-4">
               <div className="grid gap-2">
