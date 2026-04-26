@@ -7,9 +7,9 @@ const steps = [
 ];
 
 export const HowItWorks = () => (
-  <section id="how" className="py-24 border-t border-border/60">
+  <section id="how" className="py-16 border-t border-border/60">
     <div className="container">
-      <div className="text-center mb-16">
+      <div className="text-center mb-12">
         <p className="text-xs uppercase tracking-[0.3em] text-primary mb-3">Process</p>
         <h2 className="text-4xl md:text-5xl font-bold">Three steps. <span className="text-gold">Zero hassle.</span></h2>
       </div>

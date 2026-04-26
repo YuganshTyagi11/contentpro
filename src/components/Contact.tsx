@@ -6,7 +6,7 @@ const team = [
 ];
 
 export const Contact = () => (
-  <section id="contact" className="py-24 border-t border-border/60">
+  <section id="contact" className="py-16 border-t border-border/60">
     <div className="container max-w-5xl">
       <div className="text-center mb-14">
         <p className="text-xs uppercase tracking-[0.3em] text-primary mb-3">Contact</p>

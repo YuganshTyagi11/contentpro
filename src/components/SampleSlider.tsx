@@ -9,8 +9,8 @@ const images = [s1, s2, s3, s4, s5];
 export const SampleSlider = () => {
   const loop = [...images, ...images];
   return (
-    <section id="samples" className="py-24 border-t border-border/60">
-      <div className="container text-center mb-12">
+    <section id="samples" className="py-16 border-t border-border/60">
+      <div className="container text-center mb-10">
         <p className="text-xs uppercase tracking-[0.3em] text-primary mb-3">Gallery</p>
         <h2 className="text-4xl md:text-5xl font-bold mb-4">Crafted by <span className="text-gold">Content Pro</span></h2>
         <p className="text-muted-foreground max-w-xl mx-auto">
